@@ -1,4 +1,4 @@
-# PRODIGY_CS_4
+# Simple Keylogger
 
 🎯 Simple Keylogger (Prodigy Internship)
 This project is created as part of the Prodigy Infotech program to demonstrate how a basic keylogger works using Python. The tool logs keyboard input and stores it in a file, helping learners understand how keylogging operates at a fundamental level.
