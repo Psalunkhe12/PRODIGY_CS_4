@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Keylogger</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter&display=swap');
+  :root {
+    --bg-color: #121212;
+    --primary-color: #06b6d4; /* teal */
+    --text-color: #e0e0e0;
+    --accent-color: #8b5cf6; /* purple */
+    --border-radius: 12px;
+    --spacing: 24px;
+    --font-family: 'Inter', sans-serif;
+  }
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+  body {
+    margin: 0;
+    font-family: var(--font-family);
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+  header {
+    padding: var(--spacing);
+    background: linear-gradient(135deg, var(--accent-color), var(--primary-color));
+    color: white;
+    text-align: center;
+    font-weight: 700;
+    font-size: 2rem;
+    user-select: none;
+  }
+  main {
+    flex-grow: 1;
+    max-width: 900px;
+    margin: var(--spacing) auto;
+    padding: var(--spacing);
+    background: rgba(255 255 255 / 0.05);
+    border-radius: var(--border-radius);
+    box-shadow: 0 8px 24px rgba(11 24 39 / 0.9);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing);
+  }
+  .notice {
+    font-size: 0.9rem;
+    color: #bbb;
+    text-align: center;
+    font-style: italic;
+  }
+  #logDisplay {
+    background: #1e1e1e;
+    border-radius: var(--border-radius);
+    padding: 16px;
+    font-family: monospace;
+    white-space: pre-wrap;
+    overflow-y: auto;
+    min-height: 200px;
+    max-height: 400px;
+    box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.8);
+  }
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    justify-content: center;
+  }
+  button, label {
+    font-weight: 600;
+    font-size: 1rem;
+    user-select: none;
+  }
+  button {
+    background: transparent;
+    border: 2px solid var(--primary-color);
+    border-radius: var(--border-radius);
+    color: var(--primary-color);
+    padding: 12px 28px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+  button:hover, button:focus {
+    background: var(--primary-color);
+    color: var(--bg-color);
+    outline: none;
+  }
+  button:disabled {
+    border-color: #555;
+    color: #555;
+    cursor: not-allowed;
+    background: none;
+  }
+  .material-icons {
+    font-family: 'Material Icons';
+    font-weight: normal;
+    font-style: normal;
+    font-size: 20px;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    direction: ltr;
+    -webkit-font-feature-settings: 'liga';
+    -webkit-font-smoothing: antialiased;
+  }
+  .status {
+    text-align: center;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--primary-color);
+  }
+  .toggle-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--primary-color);
+  }
+  .toggle-container input[type="checkbox"] {
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+  }
+  .stats {
+    font-size: 0.95rem;
+    color: #aaa;
+    text-align: center;
+  }
+  /* Responsive */
+  @media (max-width: 640px) {
+    main {
+      margin: 16px;
+      padding: 16px;
+    }
+    header {
+      font-size: 1.6rem;
+      padding: 16px 12px;
+    }
+    .controls {
+      gap: 12px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 0.9rem;
+    }
+  }
+</style>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+</head>
+<body>
+<header>
+  Keylogger
+</header>
+<main>
+  <p class="notice" role="alert">
+    This demo captures your keystrokes while logging is active. No data leaves your browser. Use responsibly and only with permission.
+  </p>
+  <div class="status" role="status" aria-live="polite" id="statusText">Logging is currently stopped.</div>
+  <div class="controls" role="region" aria-label="Control panel">
+    <button id="startBtn" aria-live="polite" aria-pressed="false" aria-controls="statusText">
+      <span class="material-icons" aria-hidden="true">play_arrow</span> Start Logging
+    </button>
+    <button id="stopBtn" aria-live="polite" aria-pressed="true" aria-controls="statusText" disabled>
+      <span class="material-icons" aria-hidden="true">stop</span> Stop Logging
+    </button>
+    <button id="clearBtn" aria-label="Clear logged keystrokes">
+      <span class="material-icons" aria-hidden="true">clear_all</span> Clear Log
+    </button>
+    <button id="downloadBtn" aria-label="Download logged keystrokes as text file" disabled>
+      <span class="material-icons" aria-hidden="true">download</span> Download Log
+    </button>
+    <label for="specialKeysToggle" class="toggle-container" title="Toggle whether special keys like Enter, Backspace, Arrow keys are logged">
+      <input type="checkbox" id="specialKeysToggle" checked /> Include Special Keys
+    </label>
+  </div>
+  <div id="logDisplay" aria-live="polite" aria-atomic="false" aria-label="Keylogger output log" tabindex="0"></div>
+  <div class="stats" aria-live="polite" id="statsText">Keystrokes logged: 0</div>
+</main>
+<script>
+  (() => {
+    const logDisplay = document.getElementById('logDisplay');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const startBtn = document.getElementById('startBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const statusText = document.getElementById('statusText');
+    const statsText = document.getElementById('statsText');
+    const specialKeysToggle = document.getElementById('specialKeysToggle');
+
+    let keyLog = '';
+    let isLogging = false;
+    let keystrokeCount = 0;
+
+    // Load log from localStorage if exists
+    function loadLog() {
+      const savedLog = localStorage.getItem('keylogger_log');
+      if (savedLog) {
+        keyLog = savedLog;
+        keystrokeCount = keyLog.length;
+        logDisplay.textContent = keyLog;
+        updateStats();
+        updateControls();
+      }
+    }
+
+    // Save log to localStorage
+    function saveLog() {
+      localStorage.setItem('keylogger_log', keyLog);
+    }
+
+    // Clear log completely
+    function clearLog() {
+      keyLog = '';
+      keystrokeCount = 0;
+      logDisplay.textContent = '';
+      saveLog();
+      updateStats();
+      updateControls();
+    }
+
+    function normalizeKey(key) {
+      // Represent special keys in brackets e.g. [Enter]
+      const specialKeys = new Set(['Enter','Backspace','Tab','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Escape','Delete','Home','End','PageUp','PageDown','CapsLock','Insert','Pause','ScrollLock','NumLock','PrintScreen','ContextMenu']);
+      if (key.length === 1) return key;
+      else if (specialKeys.has(key)) return `[${key}]`;
+      else return `[${key}]`;
+    }
+
+    function appendKey(key) {
+      const includeSpecial = specialKeysToggle.checked;
+      const specialKeyPattern = /^\[.*\]$/;
+      const normalized = normalizeKey(key);
+      if (!includeSpecial && specialKeyPattern.test(normalized)) return;
+      keyLog += normalized;
+      keystrokeCount++;
+      // Limit max length
+      if (keyLog.length > 10000) {
+        keyLog = keyLog.slice(keyLog.length - 10000);
+      }
+      logDisplay.textContent = keyLog;
+      logDisplay.scrollTop = logDisplay.scrollHeight;
+      updateStats();
+      saveLog();
+      updateControls();
+    }
+
+    function updateStats() {
+      statsText.textContent = `Keystrokes logged: ${keystrokeCount}`;
+    }
+
+    function updateStatusText() {
+      if (isLogging) {
+        statusText.textContent = 'Logging is active.';
+      } else {
+        statusText.textContent = 'Logging is currently stopped.';
+      }
+    }
+
+    function updateControls() {
+      downloadBtn.disabled = keyLog.length === 0;
+      stopBtn.disabled = !isLogging;
+      startBtn.disabled = isLogging;
+      clearBtn.disabled = keyLog.length === 0;
+    }
+
+    function startLogging() {
+      if (isLogging) return;
+      isLogging = true;
+      updateStatusText();
+      updateControls();
+      startBtn.setAttribute('aria-pressed', 'true');
+      stopBtn.setAttribute('aria-pressed', 'false');
+    }
+
+    function stopLogging() {
+      if (!isLogging) return;
+      isLogging = false;
+      updateStatusText();
+      updateControls();
+      startBtn.setAttribute('aria-pressed', 'false');
+      stopBtn.setAttribute('aria-pressed', 'true');
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (!isLogging) return;
+      // Ignore pure modifiers alone
+      const ignoredKeys = ['Shift', 'Control', 'Alt', 'Meta'];
+      if (ignoredKeys.includes(e.key)) return;
+      appendKey(e.key);
+    });
+
+    downloadBtn.addEventListener('click', () => {
+      if (!keyLog) {
+        alert('No keystrokes recorded yet.');
+        return;
+      }
+      const blob = new Blob([keyLog], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'keylog.txt';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    startBtn.addEventListener('click', () => startLogging());
+    stopBtn.addEventListener('click', () => stopLogging());
+    clearBtn.addEventListener('click', () => {
+      if (confirm('Are you sure you want to clear the log?')) {
+        clearLog();
+      }
+    });
+    specialKeysToggle.addEventListener('change', () => {
+      // Update log display to reflect new setting
+      // For simplicity, just clear and log the history not re-processed;
+      // we keep full log but filtered display. So just reload and refresh
+      logDisplay.textContent = keyLog.split('').filter((char, idx, arr) => {
+        // We can't parse original keys easily as stored as string, so best-effort to clear.
+        return true; // Show all keys regardless for now, toggle controls next keys only
+      }).join('');
+    });
+
+    // Initialize
+    loadLog();
+    stopLogging();
+    updateStatusText();
+    updateControls();
+  })();
+</script>
+</body>
+</html>
+
